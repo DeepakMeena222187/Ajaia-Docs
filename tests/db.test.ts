@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
-import { updateVariant } from "@/lib/admin";
+import { addVariant, updateVariant } from "@/lib/admin";
 import { cancelBookingByCustomer, createBooking, bookableDates, MAX_ACTIVE_BOOKINGS } from "@/lib/bookings";
 import { getPlantBySlug, listPlants } from "@/lib/catalog";
 import { pool, query } from "@/lib/db";
@@ -217,6 +217,30 @@ describe("bookings", () => {
     expect(await cancelBookingByCustomer(r.id, other.id)).toBe(false);
     expect(await cancelBookingByCustomer(r.id, owner.id)).toBe(true);
     expect((await createBooking(other.id, { service: "home_setup", date, time: "15:30", notes: "" })).ok).toBe(true);
+  });
+});
+
+describe("security regressions", () => {
+  it("parallel bookings can't exceed the per-user cap", async () => {
+    const u = await makeUser();
+    const dates = bookableDates();
+    const res = await Promise.all(
+      [0, 1, 2, 3, 4, 5].map((i) => createBooking(u.id, { service: "consultation", date: dates[i + 12], time: "11:30", notes: "" })),
+    );
+    expect(res.filter((r) => r.ok)).toHaveLength(MAX_ACTIVE_BOOKINGS);
+  });
+
+  it("admin stock save is refused if stock changed meanwhile", async () => {
+    const v = await variantBySlug("hibiscus");
+    const fields = { name: "Red single", description: "8-inch pot", price_paise: v.price_paise, active: true };
+    const u = await makeUser();
+    await placeOrder(u.id, [{ variantId: v.id, qty: 1 }], ship, randomUUID());
+    expect(await updateVariant(v.id, { ...fields, stock: 100 }, v.stock)).toBe("stock_changed");
+    expect(await updateVariant(v.id, { ...fields, stock: 100 }, v.stock - 1)).toBe("ok");
+  });
+
+  it("addVariant on a missing plant returns false instead of crashing", async () => {
+    expect(await addVariant(99_999_999, { name: "x", description: "", price_paise: 100, stock: 1 })).toBe(false);
   });
 });
 

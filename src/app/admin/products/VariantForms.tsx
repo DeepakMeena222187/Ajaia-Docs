@@ -9,6 +9,7 @@ export function VariantRow({ v }: { v: V }) {
   return (
     <ActionForm action={updateVariantAction} className="grid items-end gap-2 rounded-xl bg-white p-3 ring-1 ring-line sm:grid-cols-[1.2fr_1.6fr_0.8fr_0.7fr_auto_auto]">
       <input type="hidden" name="variantId" value={v.id} />
+      <input type="hidden" name="stockWas" value={v.stock} />
       <Small label="Variant">
         <input name="name" defaultValue={v.name} required maxLength={60} className="input !py-1.5" />
       </Small>

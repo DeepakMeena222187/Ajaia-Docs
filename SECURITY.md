@@ -37,11 +37,27 @@ Run against a production build with real browsers and replayed/tampered requests
 | Login brute force | Locked out after 10 attempts per account |
 | **Signup flood with spoofed `X-Forwarded-For`** | **Was bypassable when self-hosted → fixed**: forwarding headers are trusted only on Vercel or with `TRUST_PROXY=1`, plus a global sign-up ceiling |
 
+### Round 2 — source-code review findings (all fixed, with regression tests)
+
+| Finding | Fix |
+|---|---|
+| Open redirect via dot segments (`/login?next=/.//evil.com`) | Redirect target re-checked after URL normalisation |
+| Password spraying / CPU exhaustion via many emails (each login = 128 MB scrypt) | Global login limit; at most 2 concurrent hashes per instance, bounded queue |
+| One client could exhaust the global sign-up ceiling | Ceiling counts only accounts actually created |
+| Anyone could lock a real user out with 10 bad passwords | With a trusted IP, lockout is per (account, IP); a looser per-account ceiling stops distributed guessing |
+| IPv6 users could rotate addresses within their /64 | IPv6 rate-limit buckets grouped by /64 |
+| Parallel requests could exceed the 3-booking cap | Per-user advisory lock inside a transaction |
+| Admin stock save could overwrite stock sold while the form was open | Compare-and-set on the previous stock value |
+| `rate_limits` table grew forever | Expired windows pruned automatically |
+| Admin edge cases returned 500 (variant on missing plant, giant order totals) | Validated: price capped at ₹1,00,000, order total bounded |
+
 ## Known limitations
 
 - No email verification or password-reset flow yet (needs an email provider). Until then, reset a password by setting a new hash from the shell.
 - No online payment gateway yet; orders are cash/UPI on delivery.
 - Rate limits are per-account and global when the client IP can't be trusted, so a determined attacker can still slow sign-ups for everyone (by design: it fails closed).
+- Cash-on-delivery orders reserve stock without payment; a throwaway account can tie up stock (10 orders/hour) until an admin cancels. Add phone/email verification or auto-expiry of unconfirmed orders before heavy traffic.
+- The sign-up form says when an email is already registered (account enumeration). Acceptable until email verification exists.
 
 ## Reporting
 

@@ -31,6 +31,7 @@ function variantFields(form: FormData): { error: string } | { name: string; desc
   if (name.length < 1 || name.length > 60) return { error: "Variant name must be 1–60 characters." };
   if (description.length > 200) return { error: "Variant description must be at most 200 characters." };
   if (price === null) return { error: "Price must be a rupee amount like 499 or 499.50." };
+  if (price > 10_000_000) return { error: "Price can't exceed ₹1,00,000." };
   if (!Number.isInteger(stock) || stock < 0 || stock > 100_000) return { error: "Stock must be a whole number from 0 to 100000." };
   return { name, description, price_paise: price, stock };
 }
@@ -41,8 +42,14 @@ export async function updateVariantAction(_prev: ActionState, form: FormData): P
   if (!variantId) return { error: "Unknown variant." };
   const fields = variantFields(form);
   if ("error" in fields) return fields;
-  const ok = await updateVariant(variantId, { ...fields, active: form.get("active") === "on" });
-  if (!ok) return { error: "Variant not found." };
+  const stockWas = Number(form.get("stockWas"));
+  const res = await updateVariant(
+    variantId,
+    { ...fields, active: form.get("active") === "on" },
+    Number.isInteger(stockWas) ? stockWas : undefined,
+  );
+  if (res === "not_found") return { error: "Variant not found." };
+  if (res === "stock_changed") return { error: "Stock changed since you opened this page (an order came in). Reload and try again." };
   refresh();
   return { success: "Saved." };
 }

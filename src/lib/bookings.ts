@@ -1,4 +1,4 @@
-import { isUniqueViolation, query } from "./db";
+import { isUniqueViolation, query, transaction } from "./db";
 import { BOOKING_SLOTS, type BOOKING_SERVICES } from "./validation";
 
 export const MAX_ACTIVE_BOOKINGS = 3;
@@ -36,19 +36,23 @@ export async function createBooking(
   if (!bookableDates(now).includes(input.date)) return { ok: false, error: "That date can't be booked. Pick another day." };
   if (!BOOKING_SLOTS.includes(input.time)) return { ok: false, error: "Invalid time slot." };
 
-  const active = await query<{ n: number }>(
-    "SELECT count(*)::int AS n FROM bookings WHERE user_id = $1 AND status = 'booked' AND slot_date >= $2::date",
-    [userId, todayIST(now)],
-  );
-  if (active.rows[0].n >= MAX_ACTIVE_BOOKINGS) {
-    return { ok: false, error: `You can hold up to ${MAX_ACTIVE_BOOKINGS} upcoming bookings. Cancel one to book another.` };
-  }
   try {
-    const res = await query<{ id: string }>(
-      "INSERT INTO bookings (user_id, service, slot_date, slot_time, notes) VALUES ($1,$2,$3,$4,$5) RETURNING id",
-      [userId, input.service, input.date, input.time, input.notes],
-    );
-    return { ok: true, id: Number(res.rows[0].id) };
+    return await transaction(async (c): Promise<BookingResult> => {
+      // Serialises this user's bookings so parallel requests can't slip past the cap.
+      await c.query("SELECT pg_advisory_xact_lock(42, $1::int)", [userId]);
+      const active = await c.query<{ n: number }>(
+        "SELECT count(*)::int AS n FROM bookings WHERE user_id = $1 AND status = 'booked' AND slot_date >= $2::date",
+        [userId, todayIST(now)],
+      );
+      if (active.rows[0].n >= MAX_ACTIVE_BOOKINGS) {
+        return { ok: false, error: `You can hold up to ${MAX_ACTIVE_BOOKINGS} upcoming bookings. Cancel one to book another.` };
+      }
+      const res = await c.query<{ id: string }>(
+        "INSERT INTO bookings (user_id, service, slot_date, slot_time, notes) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+        [userId, input.service, input.date, input.time, input.notes],
+      );
+      return { ok: true, id: Number(res.rows[0].id) };
+    });
   } catch (err) {
     if (isUniqueViolation(err)) return { ok: false, error: "Sorry, that slot was just taken. Please choose another." };
     throw err;

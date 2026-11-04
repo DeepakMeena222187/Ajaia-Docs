@@ -73,6 +73,8 @@ export async function placeOrder(
         items.push({ variantId: line.variantId, qty: line.qty, price: r.price_paise, plant: r.plant_name, variant: r.variant_name });
       }
       const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+      // Stay well inside Postgres INTEGER range for the money columns.
+      if (subtotal > 1_000_000_000) throw new OrderError("This order is too large to place online. Please contact us.");
       const ship = shippingFor(subtotal);
       const order = await c.query<{ id: string }>(
         `INSERT INTO orders (user_id, subtotal_paise, shipping_paise, total_paise, payment_method,

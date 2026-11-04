@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addToCart, parseCart, serializeCart, setQty } from "@/lib/cart";
 import { bookableDates, todayIST } from "@/lib/bookings";
 import { formatINR, parseRupeesToPaise, shippingFor } from "@/lib/money";
+import { ipBucket } from "@/lib/rate-limit";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { imageUrlSchema, shippingSchema, signupSchema, slugify, threadSchema } from "@/lib/validation";
 
@@ -18,6 +19,10 @@ describe("safeNextPath (open redirect protection)", () => {
     "evil.com",
     "",
     "/%0a/evil.com".replace("%0a", "\n"),
+    "/.//evil.com",
+    "/..//evil.com",
+    "/%2e//evil.com",
+    "/a/../..//evil.com",
   ])("rejects %j", (p) => {
     expect(safeNextPath(p, "/home")).toBe("/home");
   });
@@ -111,5 +116,14 @@ describe("booking dates", () => {
     expect(dates[0]).toBe("2026-11-06");
     expect(dates.every((d) => new Date(`${d}T00:00:00Z`).getUTCDay() !== 1)).toBe(true);
     expect(dates.at(-1)! <= "2026-12-05").toBe(true);
+  });
+});
+
+describe("ipBucket", () => {
+  it("keeps IPv4 and groups IPv6 by /64", () => {
+    expect(ipBucket("203.0.113.9")).toBe("203.0.113.9");
+    expect(ipBucket("2001:db8:abcd:12:1::5")).toBe("2001:db8:abcd:12::/64");
+    expect(ipBucket("2001:db8:abcd:12:ffff:1:2:3")).toBe("2001:db8:abcd:12::/64");
+    expect(ipBucket("2001:db8::1")).toBe("2001:db8:0:0::/64");
   });
 });

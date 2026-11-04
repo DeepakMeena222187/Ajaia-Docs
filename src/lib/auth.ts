@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { ipBucket } from "./rate-limit";
 import {
   createSessionRecord,
   deleteSessionRecord,
@@ -63,5 +64,5 @@ export async function clientIp(): Promise<string> {
   if (!process.env.VERCEL && process.env.TRUST_PROXY !== "1") return "untrusted";
   const h = await headers();
   const fwd = h.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return (fwd || h.get("x-real-ip") || "unknown").slice(0, 64);
+  return ipBucket((fwd || h.get("x-real-ip") || "unknown").slice(0, 64));
 }

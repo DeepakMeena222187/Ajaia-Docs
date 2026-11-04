@@ -62,15 +62,25 @@ export async function listAllPlantsWithVariants() {
   return plants.rows.map((p) => ({ ...p, variants: variants.rows.filter((v) => v.plant_id === p.id) }));
 }
 
+/**
+ * Updates a variant. When `stockWas` is given, stock is only written if it still has that
+ * value — so an order placed while the admin had the form open isn't silently undone.
+ */
 export async function updateVariant(
   id: number,
   v: { name: string; description: string; price_paise: number; stock: number; active: boolean },
-): Promise<boolean> {
+  stockWas?: number,
+): Promise<"ok" | "not_found" | "stock_changed"> {
   const res = await query(
-    "UPDATE variants SET name = $2, description = $3, price_paise = $4, stock = $5, active = $6 WHERE id = $1",
-    [id, v.name, v.description, v.price_paise, v.stock, v.active],
+    `UPDATE variants SET name = $2, description = $3, price_paise = $4, stock = $5, active = $6
+     WHERE id = $1 ${stockWas === undefined ? "" : "AND stock = $7"}`,
+    stockWas === undefined
+      ? [id, v.name, v.description, v.price_paise, v.stock, v.active]
+      : [id, v.name, v.description, v.price_paise, v.stock, v.active, stockWas],
   );
-  return (res.rowCount ?? 0) > 0;
+  if ((res.rowCount ?? 0) > 0) return "ok";
+  const exists = await query("SELECT 1 FROM variants WHERE id = $1", [id]);
+  return exists.rowCount ? "stock_changed" : "not_found";
 }
 
 export async function addVariant(
@@ -79,7 +89,9 @@ export async function addVariant(
 ): Promise<boolean> {
   const res = await query(
     `INSERT INTO variants (plant_id, name, description, price_paise, stock, sort_order)
-     SELECT $1, $2, $3, $4, $5, coalesce(max(sort_order) + 1, 0) FROM variants WHERE plant_id = $1
+     SELECT p.id, $2, $3, $4, $5,
+            coalesce((SELECT max(sort_order) + 1 FROM variants WHERE plant_id = p.id), 0)
+     FROM plants p WHERE p.id = $1
      RETURNING id`,
     [plantId, v.name, v.description, v.price_paise, v.stock],
   );

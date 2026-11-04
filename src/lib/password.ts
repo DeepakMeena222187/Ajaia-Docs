@@ -7,9 +7,34 @@ const P = 1;
 const KEYLEN = 64;
 const MAXMEM = 256 * 1024 * 1024;
 
+// Each hash uses 128 MB and a libuv worker thread. Capping concurrency stops a flood of
+// login attempts from exhausting memory or starving the thread pool (DNS, file I/O).
+const MAX_CONCURRENT = 2;
+let running = 0;
+const waiting: (() => void)[] = [];
+
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (running >= MAX_CONCURRENT) {
+    if (waiting.length >= 50) throw new Error("Server busy");
+    await new Promise<void>((resolve) => waiting.push(resolve));
+  } else {
+    running++;
+  }
+  try {
+    return await fn();
+  } finally {
+    const next = waiting.shift();
+    if (next) next();
+    else running--;
+  }
+}
+
 function scrypt(password: string, salt: Buffer, keylen: number, opts: ScryptOptions): Promise<Buffer> {
-  return new Promise((resolve, reject) =>
-    scryptCb(password, salt, keylen, opts, (err, key) => (err ? reject(err) : resolve(key))),
+  return withSlot(
+    () =>
+      new Promise((resolve, reject) =>
+        scryptCb(password, salt, keylen, opts, (err, key) => (err ? reject(err) : resolve(key))),
+      ),
   );
 }
 
