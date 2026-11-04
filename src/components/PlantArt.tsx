@@ -23,7 +23,7 @@ export function PlantArt({ art, hue, imageUrl, name, className = "" }: Props) {
   const leafLight = `hsl(${h} 45% 52%)`;
   const bg = `hsl(${h} 35% 90%)`;
   return (
-    <svg viewBox="0 0 200 200" role="img" aria-label={name} className={`h-full w-full ${className}`}>
+    <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label={name} className={`h-full w-full ${className}`}>
       <rect width="200" height="200" fill={bg} />
       <circle cx="160" cy="40" r="60" fill={`hsl(${h} 40% 85%)`} />
       <g>{renderArt(art, leaf, leafLight, h)}</g>
