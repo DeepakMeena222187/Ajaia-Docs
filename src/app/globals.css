@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #f7f3ea;
+  --color-paper: #fffdf8;
+  --color-moss: #2f5d3a;
+  --color-forest: #1c3a26;
+  --color-fern: #4f8a5b;
+  --color-sage: #dfe8d6;
+  --color-clay: #c2643d;
+  --color-clay-dark: #9c4a29;
+  --color-ink: #1f2a22;
+  --color-muted: #5d6b60;
+  --color-line: #e3ddcf;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-clay);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply btn bg-moss text-white hover:bg-forest;
+  }
+  .btn-accent {
+    @apply btn bg-clay text-white hover:bg-clay-dark;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-paper text-ink hover:border-moss hover:text-moss;
+  }
+  .btn-danger {
+    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-paper;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-sage px-2.5 py-0.5 text-xs font-medium text-forest;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-clay;
+  }
+  .prose-plain p + p {
+    @apply mt-3;
+  }
+}
