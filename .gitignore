@@ -46,3 +46,6 @@ next-env.d.ts
 .clawness/*
 !.clawness/memory.md
 !.clawness/rules/
+
+# Tool session state
+.anchor/
