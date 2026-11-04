@@ -44,41 +44,50 @@ h3,
   outline-offset: 2px;
 }
 
-@layer components {
-  .container-page {
-    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
-  }
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
-  }
-  .btn-primary {
-    @apply btn bg-moss text-white hover:bg-forest;
-  }
-  .btn-accent {
-    @apply btn bg-clay text-white hover:bg-clay-dark;
-  }
-  .btn-ghost {
-    @apply btn border border-line bg-paper text-ink hover:border-moss hover:text-moss;
-  }
-  .btn-danger {
-    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
-  }
-  .card {
-    @apply rounded-2xl border border-line bg-paper;
-  }
-  .input {
-    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20;
-  }
-  .label {
-    @apply mb-1.5 block text-sm font-medium text-ink;
-  }
-  .chip {
-    @apply inline-flex items-center gap-1 rounded-full bg-sage px-2.5 py-0.5 text-xs font-medium text-forest;
-  }
-  .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-clay;
-  }
-  .prose-plain p + p {
-    @apply mt-3;
-  }
+@utility container-page {
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-primary {
+  @apply btn bg-moss text-white hover:bg-forest;
+}
+
+@utility btn-accent {
+  @apply btn bg-clay text-white hover:bg-clay-dark;
+}
+
+@utility btn-ghost {
+  @apply btn border border-line bg-paper text-ink hover:border-moss hover:text-moss;
+}
+
+@utility btn-danger {
+  @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+}
+
+@utility card {
+  @apply rounded-2xl border border-line bg-paper;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-moss focus:outline-none focus:ring-2 focus:ring-moss/20;
+}
+
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-ink;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full bg-sage px-2.5 py-0.5 text-xs font-medium text-forest;
+}
+
+@utility eyebrow {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-clay;
+}
+
+.prose-plain p + p {
+  @apply mt-3;
 }
