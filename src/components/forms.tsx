@@ -11,16 +11,14 @@ export function ActionForm({
   action,
   children,
   className = "",
-  resetOnSuccess = false,
 }: {
   action: Action;
   children: ReactNode;
   className?: string;
-  resetOnSuccess?: boolean;
 }) {
   const [state, formAction] = useActionState(action, null);
   return (
-    <form action={formAction} className={className} data-reset={resetOnSuccess || undefined}>
+    <form action={formAction} className={className}>
       {children}
       <FormMessage state={state} />
     </form>
