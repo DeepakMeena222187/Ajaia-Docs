@@ -1,34 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Greenleaf — plant shop
 
-## Getting Started
+A full-stack plant e-commerce site: catalogue with varieties, benefits and care guides, accounts, cart, buy-now and checkout, order tracking, a community forum, expert-visit booking, and an admin panel for prices, stock, orders and bookings.
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router, Server Actions) · React 19 · PostgreSQL (`pg`, plain SQL) · Tailwind CSS 4 · Zod · Vitest.
+
+## Run locally
+
+Requires Node 22.18+ and PostgreSQL 14+.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local      # then set DATABASE_URL
+npm install
+npm run db:migrate
+npm run db:seed
+npm run dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Make yourself the admin
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Admin rights can only be granted from the server shell, never through the website:
 
-## Learn More
+1. Sign up on the site with your email.
+2. Run `npm run make-admin -- you@example.com`.
+3. Log out and back in; **Admin dashboard** appears in your account menu.
 
-To learn more about Next.js, take a look at the following resources:
+## Set prices and stock
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Seeded prices are placeholders. Go to **Admin → Products & prices**, edit each variety's price (in rupees) and stock, and press **Save**. Changes apply to new orders immediately; existing orders keep the price they were placed at. Untick **On sale** to hide a variety, or use **Edit details** to hide a whole plant, feature it on the home page, or set a photo URL (must be `https://`). Without a photo, each plant shows a built-in illustration.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy (Vercel + Supabase)
 
-## Deploy on Vercel
+1. Create a Supabase project. Copy the Transaction Pooler URL into `DATABASE_URL` and the Session Pooler URL into `DIRECT_URL`.
+2. From your machine, with those set: `npm run db:migrate && npm run db:seed`.
+3. Import this repo in Vercel and add `DATABASE_URL` as an environment variable.
+4. Deploy, sign up, then run `make-admin` against the production database.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Self-hosting instead: `npm run build && npm start`, put it behind HTTPS, set `TRUST_PROXY=1` only if your proxy overwrites `X-Forwarded-For`, and set `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` if you run several instances.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tests
+
+```bash
+npm test          # unit + database integration tests (uses TEST_DATABASE_URL, wiped each run)
+npm run typecheck
+npm run lint
+```
+
+## Payments
+
+Checkout currently offers **Cash on delivery** and **UPI on delivery**. Online payment (Razorpay/Stripe) is not integrated yet; when added, confirm payment server-side via the provider's signed webhook before marking an order paid.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for the threat model, the controls in place, and the results of the pre-launch penetration test.

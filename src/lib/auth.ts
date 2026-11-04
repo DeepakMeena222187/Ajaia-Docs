@@ -54,11 +54,13 @@ export async function requireAdmin(): Promise<SessionUser> {
 }
 
 /**
- * Best-effort client IP for rate limiting. On Vercel the platform overwrites
- * x-forwarded-for, so the first entry is trustworthy there; behind another proxy,
- * make sure it does the same.
+ * Client IP for rate limiting. Forwarding headers are client-controlled unless a proxy
+ * we trust overwrites them, so they are only used on Vercel (which overwrites
+ * x-forwarded-for) or when TRUST_PROXY=1 says a reverse proxy does the same.
+ * Otherwise every request shares one bucket and the global limits do the work.
  */
 export async function clientIp(): Promise<string> {
+  if (!process.env.VERCEL && process.env.TRUST_PROXY !== "1") return "untrusted";
   const h = await headers();
   const fwd = h.get("x-forwarded-for")?.split(",")[0]?.trim();
   return (fwd || h.get("x-real-ip") || "unknown").slice(0, 64);
